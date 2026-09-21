@@ -1,0 +1,228 @@
+"use client";
+
+import React, { useState } from "react";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import MotionSection from "@/components/motion/MotionSection";
+import FadeUp from "@/components/motion/FadeUp";
+import { staggerContainer, staggerItem } from "@/components/motion/variants";
+import { motion } from "framer-motion";
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Send,
+  Clock,
+  Loader2,
+  CheckCircle2
+} from "lucide-react";
+import CustomSelect from "@/components/CustomSelect";
+
+const MDiv = motion.div;
+
+export default function ContactPage() {
+  const [selectedService, setSelectedService] = useState("Web Development");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    message: ""
+  });
+
+  const services = [
+    "Web Development",
+    "Mobile App Development",
+    "Custom Software",
+    "API & Payment",
+    "Cloud Infrastructure",
+  ];
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatus("loading");
+
+    try {
+      const response = await fetch("https://jerries56.app.n8n.cloud/webhook/c3969006-ecf7-4dd4-92d4-d0d6dd7da4b0", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...formData,
+          service: selectedService,
+          submittedAt: new Date().toISOString(),
+          source: "UNIFOTEC Contact Form"
+        }),
+      });
+
+      if (response.ok) {
+        setStatus("success");
+        setFormData({ fullName: "", email: "", message: "" });
+        setTimeout(() => setStatus("idle"), 5000);
+      } else {
+        console.error("Server responded with error:", response.status);
+        setStatus("error");
+        setTimeout(() => setStatus("idle"), 5000);
+      }
+    } catch (error) {
+      console.error("Fetch failure:", error);
+      setStatus("error");
+      setTimeout(() => setStatus("idle"), 5000);
+    }
+  };
+
+  return (
+    <main className="min-h-screen pt-20">
+      <Navbar />
+
+      {/* Hero Header */}
+      <section className="bg-white py-24 border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <FadeUp>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-dark mb-6 tracking-tight text-balance">
+              Let's Engineer Your <br /><span className="text-primary">Next Digital Asset</span>
+            </h1>
+            <p className="text-grey text-lg max-w-2xl mx-auto font-medium">
+              Have a complex technical challenge? Our solutions architects are ready to help you build scalable software systems.
+            </p>
+          </FadeUp>
+        </div>
+      </section>
+
+      <MotionSection className="py-20 bg-light">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+
+            {/* Contact Info */}
+            <MDiv variants={staggerContainer} className="space-y-8">
+              <MDiv variants={staggerItem}>
+                <h2 className="text-2xl font-bold text-dark mb-6">Global Headquarters</h2>
+                <div className="space-y-6">
+                  <div className="flex gap-4 p-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                    <div className="w-12 h-12 bg-primary/5 text-primary rounded-xl flex items-center justify-center shrink-0">
+                      <MapPin className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-dark text-lg mb-1">Accra, Ghana</h4>
+                      <p className="text-grey text-sm font-medium">East Legon, Digital Address GA-123-4567</p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4 p-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                    <div className="w-12 h-12 bg-emerald-50 text-accent rounded-xl flex items-center justify-center shrink-0">
+                      <Mail className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-dark text-lg mb-1">Electronic Mail</h4>
+                      <p className="text-grey text-sm font-medium">info@unifotec-web.com</p>
+                      <p className="text-grey text-sm font-medium">support@unifotec-web.com</p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4 p-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                    <div className="w-12 h-12 bg-blue-50 text-primary rounded-xl flex items-center justify-center shrink-0">
+                      <Phone className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-dark text-lg mb-1">Direct Line</h4>
+                      <p className="text-grey text-sm font-medium">+233 24 123 4567</p>
+                      <p className="text-grey text-sm font-medium">Mon-Fri, 8AM - 6PM GMT</p>
+                    </div>
+                  </div>
+                </div>
+              </MDiv>
+
+              <MDiv variants={staggerItem} className="p-8 bg-dark rounded-3xl text-white relative overflow-hidden">
+                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-3xl rounded-full -mr-16 -mt-16"></div>
+                 <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-primary" />
+                    Rapid Response SLA
+                 </h3>
+                 <p className="text-grey text-sm font-medium leading-relaxed">
+                    Our technical team typically responds to all inquiries within 2-4 business hours with a preliminary architectural assessment.
+                 </p>
+              </MDiv>
+            </MDiv>
+
+            {/* Contact Form */}
+            <MDiv variants={staggerItem} className="bg-white p-8 md:p-10 rounded-3xl border border-gray-100 shadow-xl shadow-slate-200/50">
+              <h3 className="text-2xl font-bold text-dark mb-8">Send a Technical Inquiry</h3>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-[10px] font-bold text-grey uppercase tracking-widest mb-2">Full Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.fullName}
+                      onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                      placeholder="John Doe"
+                      className="w-full bg-light border border-gray-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 transition-all font-medium"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-grey uppercase tracking-widest mb-2">Email Address</label>
+                    <input
+                      type="email"
+                      required
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      placeholder="john@company.com"
+                      className="w-full bg-light border border-gray-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 transition-all font-medium"
+                    />
+                  </div>
+                </div>
+
+                <CustomSelect
+                  label="Subject / Service"
+                  options={services}
+                  value={selectedService}
+                  onChange={setSelectedService}
+                />
+
+                <div>
+                  <label className="block text-[10px] font-bold text-grey uppercase tracking-widest mb-2">Message / Requirements</label>
+                  <textarea
+                    rows={5}
+                    required
+                    value={formData.message}
+                    onChange={(e) => setFormData({...formData, message: e.target.value})}
+                    placeholder="Describe your project goals and technical constraints..."
+                    className="w-full bg-light border border-gray-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 transition-all font-medium resize-none"
+                  ></textarea>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={status === "loading"}
+                  className={`w-full font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 group ${
+                    status === "success"
+                      ? "bg-accent text-white"
+                      : status === "error"
+                      ? "bg-red-500 text-white"
+                      : "bg-primary hover:bg-primary-dark text-white shadow-primary/20"
+                  }`}
+                >
+                  {status === "loading" ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : status === "success" ? (
+                    <><CheckCircle2 className="w-5 h-5" /> Inquiry Sent Successfully!</>
+                  ) : status === "error" ? (
+                    "Failed to Send. Try Again."
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
+                      Send Inquiry
+                    </>
+                  )}
+                </button>
+              </form>
+            </MDiv>
+          </div>
+        </div>
+      </MotionSection>
+
+      <Footer />
+    </main>
+  );
+}
