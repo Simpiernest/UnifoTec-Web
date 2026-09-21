@@ -43,7 +43,7 @@ export default function KnowledgeBasePage() {
         {articles.map((art, i) => (
           <MDiv
             key={i}
-            whileHover={{ y: -4, shadow: "0 10px 15px -3px rgba(0,0,0,0.1)" }}
+            whileHover={{ y: -4, boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)" }}
             className="bg-white p-6 rounded-2xl border border-gray-100 flex items-center justify-between group cursor-pointer transition-all"
           >
             <div className="flex items-center gap-4">
