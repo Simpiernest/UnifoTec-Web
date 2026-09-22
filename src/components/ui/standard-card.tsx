@@ -30,7 +30,7 @@ export const StandardCard: React.FC<StandardCardProps> = ({
   const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["10deg", "-10deg"]);
   const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-10deg", "10deg"]);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>): void => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLElement>): void => {
     const rect = e.currentTarget.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;
