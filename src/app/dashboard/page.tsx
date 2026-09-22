@@ -33,6 +33,7 @@ import {
 
 const MDiv = motion.div;
 
+// UNIFOTEC-WEB Administration Ecosystem
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [heroData, setHeroData] = useState({ title: "", subtitle: "" });
