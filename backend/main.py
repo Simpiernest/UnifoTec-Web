@@ -163,6 +163,37 @@ async def get_team():
     conn.close()
     return [dict(row) for row in rows]
 
+@app.post("/api/team")
+async def add_team_member(item: TeamMember):
+    conn = get_db_connection()
+    cursor = conn.execute(
+        "INSERT INTO team (name, role, sub, avatar) VALUES (?, ?, ?, ?)",
+        (item.name, item.role, item.sub, item.avatar)
+    )
+    conn.commit()
+    new_id = cursor.lastrowid
+    conn.close()
+    return {"id": new_id, "message": "Team member added"}
+
+@app.put("/api/team/{member_id}")
+async def update_team_member(member_id: int, item: TeamMember):
+    conn = get_db_connection()
+    conn.execute(
+        "UPDATE team SET name=?, role=?, sub=?, avatar=? WHERE id=?",
+        (item.name, item.role, item.sub, item.avatar, member_id)
+    )
+    conn.commit()
+    conn.close()
+    return {"message": "Team member updated"}
+
+@app.delete("/api/team/{member_id}")
+async def delete_team_member(member_id: int):
+    conn = get_db_connection()
+    conn.execute("DELETE FROM team WHERE id=?", (member_id,))
+    conn.commit()
+    conn.close()
+    return {"message": "Team member deleted"}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -51,3 +51,28 @@ export async function fetchTeam() {
   if (!res.ok) throw new Error("Failed to fetch team");
   return res.json();
 }
+
+export async function addTeamMember(data: any) {
+  const res = await fetch(`${API_BASE_URL}/team`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+
+export async function updateTeamMember(id: number, data: any) {
+  const res = await fetch(`${API_BASE_URL}/team/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+
+export async function deleteTeamMember(id: number) {
+  const res = await fetch(`${API_BASE_URL}/team/${id}`, {
+    method: "DELETE",
+  });
+  return res.json();
+}

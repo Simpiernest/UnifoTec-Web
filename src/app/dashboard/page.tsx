@@ -20,11 +20,16 @@ import {
   Trash2,
   Plus,
   Save,
-  Loader2
+  Loader2,
+  X
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { fetchHero, updateHero, fetchServices, addService, updateService, deleteService } from "@/lib/api";
+import {
+  fetchHero, updateHero,
+  fetchServices, addService, updateService, deleteService,
+  fetchTeam, addTeamMember, updateTeamMember, deleteTeamMember
+} from "@/lib/api";
 
 const MDiv = motion.div;
 
@@ -36,7 +41,17 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Form states
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<"service" | "team">("service");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [formData, setFormData] = useState<any>({});
+
   useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = () => {
     setIsLoading(true);
     Promise.all([fetchHero(), fetchServices(), fetchTeam()])
       .then(([hero, svcs, tm]) => {
@@ -46,16 +61,56 @@ export default function DashboardPage() {
       })
       .catch(err => console.error("Error loading dashboard data", err))
       .finally(() => setIsLoading(false));
-  }, []);
+  };
 
   const handleHeroUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     try {
       await updateHero(heroData);
-      alert("Hero content updated successfully!");
+      alert("Hero content updated successfully! It will now appear on the website.");
     } catch (err) {
       alert("Failed to update hero content");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleOpenModal = (type: "service" | "team", data: any = null) => {
+    setModalType(type);
+    setEditingId(data?.id || null);
+    if (type === "service") {
+      setFormData(data || { title: "", content: "", category: "Web", icon: "Monitor", energy: 100, status: "completed" });
+    } else {
+      setFormData(data || { name: "", role: "", sub: "", avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200&h=200&auto=format&fit=crop" });
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleSubmitModal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      if (modalType === "service") {
+        if (editingId) {
+          await updateService(editingId, formData);
+        } else {
+          await addService(formData);
+        }
+        const svcs = await fetchServices();
+        setServices(svcs);
+      } else {
+        if (editingId) {
+          await updateTeamMember(editingId, formData);
+        } else {
+          await addTeamMember(formData);
+        }
+        const tm = await fetchTeam();
+        setTeam(tm);
+      }
+      setIsModalOpen(false);
+    } catch (err) {
+      alert("Action failed");
     } finally {
       setIsSaving(false);
     }
@@ -66,6 +121,16 @@ export default function DashboardPage() {
     try {
       await deleteService(id);
       setServices(services.filter(s => s.id !== id));
+    } catch (err) {
+      alert("Delete failed");
+    }
+  };
+
+  const handleDeleteTeam = async (id: number) => {
+    if (!confirm("Remove this team member?")) return;
+    try {
+      await deleteTeamMember(id);
+      setTeam(team.filter(t => t.id !== id));
     } catch (err) {
       alert("Delete failed");
     }
@@ -146,9 +211,8 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center space-x-4">
-            <button className="p-2 bg-slate-50 hover:bg-slate-100 rounded-lg text-grey relative transition-all">
-              <Bell className="w-4 h-4" />
-              <span className="w-2 h-2 bg-primary rounded-full absolute top-1.5 right-1.5 border-2 border-white animate-pulse"></span>
+            <button onClick={loadData} className="p-2 bg-slate-50 hover:bg-slate-100 rounded-lg text-grey relative transition-all">
+              <Activity className="w-4 h-4" />
             </button>
             <div className="border-l border-gray-200 h-6"></div>
             <div className="flex items-center space-x-2">
@@ -167,7 +231,7 @@ export default function DashboardPage() {
               <p className="text-grey text-xs font-medium">Realtime operational statistics for UNIFOTEC-WEB master server array.</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl px-4 py-2 flex items-center space-x-2 text-xs font-bold text-dark shadow-sm">
-              <Activity className="w-3.5 h-3.5 text-accent animate-pulse" />
+              <Activity className={`w-3.5 h-3.5 text-accent ${isLoading ? 'animate-spin' : 'animate-pulse'}`} />
               <span>Status: Cluster Connected</span>
             </div>
           </div>
@@ -207,7 +271,10 @@ export default function DashboardPage() {
                 <MDiv key="svcs" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
                   <div className="flex justify-between items-center">
                     <h3 className="font-bold text-lg text-dark">Live Service Nodes</h3>
-                    <button className="bg-primary text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-2 hover:bg-primary-dark transition-all">
+                    <button
+                      onClick={() => handleOpenModal("service")}
+                      className="bg-primary text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-2 hover:bg-primary-dark transition-all"
+                    >
                       <Plus className="w-4 h-4" /> Add Node
                     </button>
                   </div>
@@ -228,7 +295,7 @@ export default function DashboardPage() {
                             <td className="p-4"><span className="px-2 py-0.5 bg-blue-50 text-primary rounded-md font-bold">{svc.category}</span></td>
                             <td className="p-4 text-accent font-bold uppercase">{svc.status}</td>
                             <td className="p-4 text-right space-x-2">
-                              <button className="p-2 hover:bg-blue-50 text-primary rounded-lg transition-all"><Edit className="w-4 h-4" /></button>
+                              <button onClick={() => handleOpenModal("service", svc)} className="p-2 hover:bg-blue-50 text-primary rounded-lg transition-all"><Edit className="w-4 h-4" /></button>
                               <button onClick={() => handleDeleteService(svc.id)} className="p-2 hover:bg-rose-50 text-rose-500 rounded-lg transition-all"><Trash2 className="w-4 h-4" /></button>
                             </td>
                           </tr>
@@ -243,7 +310,10 @@ export default function DashboardPage() {
                 <MDiv key="team" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
                   <div className="flex justify-between items-center">
                     <h3 className="font-bold text-lg text-dark">Core Architecture Team</h3>
-                    <button className="bg-primary text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-2 hover:bg-primary-dark transition-all">
+                    <button
+                      onClick={() => handleOpenModal("team")}
+                      className="bg-primary text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-2 hover:bg-primary-dark transition-all"
+                    >
                       <Plus className="w-4 h-4" /> Recruit Member
                     </button>
                   </div>
@@ -259,8 +329,8 @@ export default function DashboardPage() {
                         </div>
                         <p className="text-grey text-xs mb-6 line-clamp-2">{member.sub}</p>
                         <div className="flex gap-2">
-                           <button className="flex-1 bg-slate-50 hover:bg-primary hover:text-white py-2 rounded-lg text-[10px] font-bold uppercase transition-all">Edit</button>
-                           <button className="p-2 bg-rose-50 text-rose-500 rounded-lg hover:bg-rose-500 hover:text-white transition-all"><Trash2 className="w-4 h-4" /></button>
+                           <button onClick={() => handleOpenModal("team", member)} className="flex-1 bg-slate-50 hover:bg-primary hover:text-white py-2 rounded-lg text-[10px] font-bold uppercase transition-all">Edit</button>
+                           <button onClick={() => handleDeleteTeam(member.id)} className="p-2 bg-rose-50 text-rose-500 rounded-lg hover:bg-rose-500 hover:text-white transition-all"><Trash2 className="w-4 h-4" /></button>
                         </div>
                       </div>
                     ))}
@@ -305,6 +375,88 @@ export default function DashboardPage() {
           )}
         </main>
       </div>
+
+      {/* Shared Modal for CRUD */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <MDiv
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
+            >
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                <h3 className="font-black text-dark text-lg uppercase tracking-tight">
+                  {editingId ? "Update" : "Create New"} {modalType}
+                </h3>
+                <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-xl transition-all">
+                  <X className="w-5 h-5 text-grey" />
+                </button>
+              </div>
+              <form onSubmit={handleSubmitModal} className="p-6 space-y-4">
+                {modalType === "service" ? (
+                  <>
+                    <input
+                      type="text" placeholder="Service Title"
+                      value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})}
+                      className="w-full bg-slate-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-primary/50"
+                    />
+                    <textarea
+                      placeholder="Content Description"
+                      value={formData.content} onChange={e => setFormData({...formData, content: e.target.value})}
+                      className="w-full bg-slate-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-primary/50"
+                      rows={3}
+                    />
+                    <div className="grid grid-cols-2 gap-4">
+                      <select
+                        value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}
+                        className="bg-slate-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-medium"
+                      >
+                        <option value="Web">Web</option>
+                        <option value="Mobile">Mobile</option>
+                        <option value="Software">Software</option>
+                      </select>
+                      <input
+                        type="number" placeholder="Energy %"
+                        value={formData.energy} onChange={e => setFormData({...formData, energy: parseInt(e.target.value)})}
+                        className="bg-slate-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-medium"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <input
+                      type="text" placeholder="Full Name"
+                      value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
+                      className="w-full bg-slate-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-primary/50"
+                    />
+                    <input
+                      type="text" placeholder="Role (e.g. Lead Developer)"
+                      value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}
+                      className="w-full bg-slate-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-primary/50"
+                    />
+                    <textarea
+                      placeholder="Short bio / specialty"
+                      value={formData.sub} onChange={e => setFormData({...formData, sub: e.target.value})}
+                      className="w-full bg-slate-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-primary/50"
+                      rows={2}
+                    />
+                  </>
+                )}
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="w-full bg-primary text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/20 flex items-center justify-center gap-2 hover:bg-primary-dark transition-all"
+                >
+                  {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                  Finalize Record
+                </button>
+              </form>
+            </MDiv>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
